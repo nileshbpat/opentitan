@@ -11,6 +11,7 @@ module lc_ctrl
   import lc_ctrl_pkg::*;
   import lc_ctrl_reg_pkg::*;
   import lc_ctrl_state_pkg::*;
+  import axi_pkg::*;
 #(
   // Enable asynchronous transitions on alerts.
   parameter logic [NumAlerts-1:0] AlertAsyncOn = {NumAlerts{1'b1}},
@@ -35,9 +36,19 @@ module lc_ctrl
   // Clock for KMAC interface
   input                                              clk_kmac_i,
   input                                              rst_kmac_ni,
-  // Bus Interface (device)
-  input  tlul_pkg::tl_h2d_t                          tl_i,
-  output tlul_pkg::tl_d2h_t                          tl_o,
+  // // Bus Interface (device)
+  // input  tlul_pkg::tl_h2d_t                          tl_i,
+  // output tlul_pkg::tl_d2h_t                          tl_o,
+
+  input  axi_struct_pkg::axi_wr_req_t                        axi_wr_req,
+  output axi_struct_pkg::axi_wr_rsp_t                        axi_wr_rsp,
+  input  axi_struct_pkg::axi_rd_req_t                        axi_rd_req,
+  output axi_struct_pkg::axi_rd_rsp_t                        axi_rd_rsp,
+
+  // // AXI interface (device)
+  // axi_if.w_sub                                       s_lc_axi_w_if,
+  // axi_if.r_sub                                       s_lc_axi_r_if,
+
   // JTAG TAP.
   input  jtag_pkg::jtag_req_t                        jtag_i,
   output jtag_pkg::jtag_rsp_t                        jtag_o,
@@ -117,6 +128,68 @@ module lc_ctrl
   import prim_mubi_pkg::mubi8_test_true_strict;
   import prim_mubi_pkg::mubi8_test_false_loose;
 
+  // AXI2TLUL interface signals
+  tlul_pkg::tl_h2d_t      tl_i;
+  tlul_pkg::tl_d2h_t      tl_o;
+
+  axi_if axi_if(
+    .clk(clk_i),
+    .rst_n(rst_ni)
+  );
+
+  assign axi_if.awaddr      = axi_wr_req.awaddr;
+  assign axi_if.awburst     = axi_wr_req.awburst;
+  assign axi_if.awsize      = axi_wr_req.awsize;
+  assign axi_if.awlen       = axi_wr_req.awlen;
+  assign axi_if.awuser      = axi_wr_req.awuser;
+  assign axi_if.awid        = axi_wr_req.awid;
+  assign axi_if.awlock      = axi_wr_req.awlock;
+  assign axi_if.awvalid     = axi_wr_req.awvalid;
+  assign axi_wr_rsp.awready = axi_if.awready;
+  
+  assign axi_if.wdata       = axi_wr_req.wdata;
+  assign axi_if.wstrb       = axi_wr_req.wstrb;
+  assign axi_if.wlast       = axi_wr_req.wlast;
+  assign axi_if.wvalid      = axi_wr_req.wvalid;
+  assign axi_wr_rsp.wready  = axi_if.wready;
+  
+  assign axi_wr_rsp.bresp   = axi_if.bresp;
+  assign axi_wr_rsp.bid     = axi_if.bid;
+  assign axi_wr_rsp.bvalid  = axi_if.bvalid;
+  assign axi_if.bready      = axi_wr_req.bready;
+  
+  assign axi_if.araddr      = axi_rd_req.araddr;
+  assign axi_if.arburst     = axi_rd_req.arburst;
+  assign axi_if.arsize      = axi_rd_req.arsize;
+  assign axi_if.arlen       = axi_rd_req.arlen;
+  assign axi_if.aruser      = axi_rd_req.aruser;
+  assign axi_if.arid        = axi_rd_req.arid;
+  assign axi_if.arlock      = axi_rd_req.arlock;
+  assign axi_if.arvalid     = axi_rd_req.arvalid;
+  assign axi_rd_rsp.arready = axi_if.arready;
+  
+  assign axi_rd_rsp.rdata   = axi_if.rdata;
+  assign axi_rd_rsp.rresp   = axi_if.rresp;
+  assign axi_rd_rsp.rid     = axi_if.rid;
+  assign axi_rd_rsp.rlast   = axi_if.rlast;
+  assign axi_rd_rsp.rvalid  = axi_if.rvalid;
+  assign axi_if.rready      = axi_rd_req.rready;
+
+  // AXI2TLUL instance
+    axi2tlul #(
+      .AW     (32),
+      .DW     (32),
+      .UW     (32),
+      .IW     (1 )
+  ) u_lc_axi2tlul (
+      .clk            (clk_i),
+      .rst_n          (rst_ni),
+      .s_axi_w_if     (axi_if.w_sub),
+      .s_axi_r_if     (axi_if.r_sub),
+      .tl_o           (tl_i),
+      .tl_i           (tl_o)
+  );
+  
   ////////////////////////
   // Integration Checks //
   ////////////////////////

@@ -77,7 +77,6 @@ module tb;
     .rst_n(rst_n)
   );
 
-
   // KMAC App agent hookup
   kmac_pkg::app_rsp_t kmac_data_in;
   kmac_pkg::app_req_t kmac_data_out;
@@ -115,8 +114,15 @@ module tb;
     .clk_kmac_i (clk),
     .rst_kmac_ni(rst_n),
 
-    .tl_i      (tl_if.h2d),
-    .tl_o      (tl_if.d2h),
+    // .tl_i      (tl_if.h2d),
+    // .tl_o      (tl_if.d2h),
+
+    .axi_wr_req    (tl_if.axi_wr_req),
+    .axi_wr_rsp    (tl_if.axi_wr_rsp),
+
+    .axi_rd_req    (tl_if.axi_rd_req),
+    .axi_rd_rsp    (tl_if.axi_rd_rsp),
+
     .alert_rx_i(alert_rx),
     .alert_tx_o(alert_tx),
 
@@ -172,6 +178,95 @@ module tb;
     .otp_manuf_state_i(lc_ctrl_if.otp_manuf_state_i),
     .hw_rev_o(hw_rev_o)
   );
+
+  
+  
+  // // dut
+  // lc_ctrl_top #(
+  //   .AlertAsyncOn(AlertAsyncOn),
+  //   // Idcode value for the JTAG.
+  //   .IdcodeValue(IdcodeValue),
+  //   // Random netlist constants
+  //   .RndCnstLcKeymgrDivInvalid(RndCnstLcKeymgrDivInvalid),
+  //   .RndCnstLcKeymgrDivTestUnlocked(RndCnstLcKeymgrDivTestUnlocked),
+  //   .RndCnstLcKeymgrDivDev(RndCnstLcKeymgrDivDev),
+  //   .RndCnstLcKeymgrDivProduction(RndCnstLcKeymgrDivProduction),
+  //   .RndCnstLcKeymgrDivRma(RndCnstLcKeymgrDivRma),
+  //   .SiliconCreatorId(LcCtrlSiliconCreatorId[lc_ctrl_reg_pkg::SiliconCreatorIdWidth-1:0]),
+  //   .ProductId(LcCtrlProductId[lc_ctrl_reg_pkg::ProductIdWidth-1:0]),
+  //   .RevisionId(LcCtrlRevisionId[lc_ctrl_reg_pkg::RevisionIdWidth-1:0]),
+  //   .SecVolatileRawUnlockEn(`SEC_VOLATILE_RAW_UNLOCK_EN)
+  // ) dut (
+  //   .clk_i (clk),
+  //   .rst_ni(rst_n),
+
+  //   // ICEBOX (#18007): connect this to a different clock
+  //   .clk_kmac_i (clk),
+  //   .rst_kmac_ni(rst_n),
+
+  //   // .tl_i      (tl_if.h2d),
+  //   // .tl_o      (tl_if.d2h),
+
+  //   .s_lc_axi_w_if (axi_if.w_sub),
+  //   .s_lc_axi_r_if (axi_if.r_sub),
+
+  //   .alert_rx_i(alert_rx),
+  //   .alert_tx_o(alert_tx),
+
+  //   .jtag_i     ({jtag_if.tck, jtag_if.tms, jtag_if.trst_n, jtag_if.tdi}),
+  //   .jtag_o     ({jtag_if.tdo, lc_ctrl_if.tdo_oe}),
+  //   .scanmode_i (lc_ctrl_if.scanmode_i),
+  //   .scan_rst_ni(lc_ctrl_if.scan_rst_ni),
+
+  //   .esc_scrap_state0_tx_i(esc_scrap_state0_if.esc_tx),
+  //   .esc_scrap_state0_rx_o(esc_scrap_state0_if.esc_rx),
+  //   .esc_scrap_state1_tx_i(esc_scrap_state1_if.esc_tx),
+  //   .esc_scrap_state1_rx_o(esc_scrap_state1_if.esc_rx),
+
+  //   .pwr_lc_i(pwr_lc[LcPwrInitReq]),
+  //   .pwr_lc_o(pwr_lc[LcPwrDoneRsp:LcPwrIdleRsp]),
+  //   .strap_en_override_o(lc_ctrl_if.strap_en_override_o),
+
+  //   .lc_otp_vendor_test_o(otp_vendor_test_ctrl),
+  //   .lc_otp_vendor_test_i(otp_vendor_test_status),
+
+  //   .lc_otp_program_o({otp_prog_if.req, otp_prog_if.h_data}),
+  //   .lc_otp_program_i({otp_prog_if.d_data, otp_prog_if.ack}),
+
+  //   .kmac_data_i(kmac_data_in),
+  //   .kmac_data_o(kmac_data_out),
+
+  //   .otp_lc_data_i(lc_ctrl_if.otp_i),
+
+  //   .lc_dft_en_o               (lc_ctrl_if.lc_dft_en_o),
+  //   .lc_nvm_debug_en_o         (lc_ctrl_if.lc_nvm_debug_en_o),
+  //   .lc_hw_debug_en_o          (lc_ctrl_if.lc_hw_debug_en_o),
+  //   .lc_cpu_en_o               (lc_ctrl_if.lc_cpu_en_o),
+  //   .lc_creator_seed_sw_rw_en_o(lc_ctrl_if.lc_creator_seed_sw_rw_en_o),
+  //   .lc_owner_seed_sw_rw_en_o  (lc_ctrl_if.lc_owner_seed_sw_rw_en_o),
+  //   .lc_iso_part_sw_rd_en_o    (lc_ctrl_if.lc_iso_part_sw_rd_en_o),
+  //   .lc_iso_part_sw_wr_en_o    (lc_ctrl_if.lc_iso_part_sw_wr_en_o),
+  //   .lc_seed_hw_rd_en_o        (lc_ctrl_if.lc_seed_hw_rd_en_o),
+  //   .lc_keymgr_en_o            (lc_ctrl_if.lc_keymgr_en_o),
+  //   .lc_escalate_en_o          (lc_ctrl_if.lc_escalate_en_o),
+  //   .lc_check_byp_en_o         (lc_ctrl_if.lc_check_byp_en_o),
+
+  //   .lc_clk_byp_req_o(lc_ctrl_if.clk_byp_req_o),
+  //   .lc_clk_byp_ack_i(lc_ctrl_if.clk_byp_ack_i),
+
+  //   .lc_flash_rma_seed_o(lc_ctrl_if.flash_rma_seed_o),
+  //   .lc_flash_rma_req_o (lc_ctrl_if.flash_rma_req_o),
+  //   .lc_flash_rma_ack_i (lc_ctrl_if.flash_rma_ack_i),
+
+  //   .lc_keymgr_div_o(lc_ctrl_if.keymgr_div_o),
+
+  //   .otp_device_id_i(lc_ctrl_if.otp_device_id_i),
+
+  //   .otp_manuf_state_i(lc_ctrl_if.otp_manuf_state_i),
+  //   .hw_rev_o(hw_rev_o)
+  // );
+
+  
 
   //
   // Whitebox signals - these come from within the RTL

@@ -2,35 +2,22 @@ CAPI=2:
 # Copyright lowRISC contributors (OpenTitan project).
 # Licensed under the Apache License, Version 2.0, see LICENSE for details.
 # SPDX-License-Identifier: Apache-2.0
-name: "lowrisc:ip:lc_ctrl:0.1"
-description: "LC Controller"
-
+name: "lowrisc:ip:axi2tlul:1.0"
+description: "USB-C debug cable detection (CC1/CC2 voltage sensing)"
 filesets:
   files_rtl:
     depend:
+      - lowrisc:constants:top_pkg
       - lowrisc:prim:all
-      - lowrisc:prim:esc
-      - lowrisc:prim:clock_mux2
-      - lowrisc:prim:lc_sync
-      - lowrisc:prim:lc_sender
-      - lowrisc:prim:mubi
-      - lowrisc:prim:sparse_fsm
-      - lowrisc:ip:lc_ctrl_pkg
       - lowrisc:ip:tlul
-      - lowrisc:ip:axi2tlul
-      - lowrisc:ip_interfaces:pwrmgr_pkg
-      - lowrisc:ip:otp_ctrl_pkg
-      - lowrisc:ip:kmac_pkg
-      - lowrisc:ip:rv_dm
-      - lowrisc:ip_interfaces:alert_handler_reg
+      - lowrisc:ip:axi_dma_top
+      - "fileset_partner  ? (partner:systems:ast_pkg)"
+      - "!fileset_partner ? (lowrisc:systems:ast_pkg)"
+
     files:
-      - rtl/lc_ctrl_reg_top.sv
-      - rtl/lc_ctrl_state_decode.sv
-      - rtl/lc_ctrl_state_transition.sv
-      - rtl/lc_ctrl_signal_decode.sv
-      - rtl/lc_ctrl_fsm.sv
-      - rtl/lc_ctrl_kmac_if.sv
-      - rtl/lc_ctrl.sv
+      - rtl/axi2tlul_cmd_intg_gen.sv
+      - rtl/sub2tlul.sv
+      - rtl/axi2tlul.sv
     file_type: systemVerilogSource
 
   files_verilator_waiver:
@@ -38,33 +25,23 @@ filesets:
       # common waivers
       - lowrisc:lint:common
       - lowrisc:lint:comportable
-    files:
-      - lint/lc_ctrl.vlt
-    file_type: vlt
 
   files_ascentlint_waiver:
     depend:
       # common waivers
       - lowrisc:lint:common
       - lowrisc:lint:comportable
-    files:
-      - lint/lc_ctrl.waiver
-    file_type: waiver
 
   files_veriblelint_waiver:
     depend:
       # common waivers
       - lowrisc:lint:common
       - lowrisc:lint:comportable
-    files:
-      - lint/lc_ctrl.vbl
-    file_type: veribleLintWaiver
 
 parameters:
   SYNTHESIS:
     datatype: bool
     paramtype: vlogdefine
-
 
 targets:
   default: &default_target
@@ -73,7 +50,8 @@ targets:
       - tool_ascentlint  ? (files_ascentlint_waiver)
       - tool_veriblelint ? (files_veriblelint_waiver)
       - files_rtl
-    toplevel: lc_ctrl
+    toplevel: axi2tlul
+
 
   lint:
     <<: *default_target
@@ -85,17 +63,3 @@ targets:
         mode: lint-only
         verilator_options:
           - "-Wall"
-
-  syn:
-    <<: *default_target
-    # TODO: set default to DC once
-    # this option is available
-    # olofk/edalize#89
-    default_tool: icarus
-    parameters:
-      - SYNTHESIS=true
-
-  formal:
-    filesets:
-      - files_rtl
-    toplevel: lc_ctrl_fsm
