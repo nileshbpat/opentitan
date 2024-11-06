@@ -67,12 +67,14 @@ module axi_sub import axi_pkg::*; #(
 );
 
     // Exclusive Access Signals
+    `ifdef CALIPTRA_AXI_SUB_EX_EN
     logic        [ID_NUM-1:0] ex_clr;
     logic        [ID_NUM-1:0] ex_active;
     struct packed {
         logic [AW-1:0] addr;
         logic [AW-1:0] addr_mask;
     } [ID_NUM-1:0] ex_ctx;
+    `endif
 
     //Read Subordinate INF
     logic          r_dv;
@@ -103,9 +105,8 @@ module axi_sub import axi_pkg::*; #(
         .AW   (AW   ),
         .DW   (DW   ),
         .UW   (UW   ),
-        .IW   (IW   ),
+        .IW   (IW   )
 
-        .EX_EN(EX_EN)
     ) i_axi_sub_wr (
         .clk  (clk  ),
         .rst_n(rst_n),
@@ -114,9 +115,11 @@ module axi_sub import axi_pkg::*; #(
         .s_axi_if(s_axi_w_if),
 
         // Exclusive Access Signals
+        `ifdef CALIPTRA_AXI_SUB_EX_EN
         .ex_clr   (ex_clr   ),
         .ex_active(ex_active),
         .ex_ctx   (ex_ctx   ),
+        `endif
 
         //COMPONENT INF
         .dv   (w_dv   ),
@@ -138,7 +141,6 @@ module axi_sub import axi_pkg::*; #(
         .UW(UW),
         .IW(IW),
 
-        .EX_EN(EX_EN),
         .C_LAT(C_LAT)
     ) i_axi_sub_rd (
         .clk  (clk  ),
@@ -148,9 +150,11 @@ module axi_sub import axi_pkg::*; #(
         .s_axi_if(s_axi_r_if),
 
         // Exclusive Access Signals
+        `ifdef CALIPTRA_AXI_SUB_EX_EN
         .ex_clr   (ex_clr   ),
         .ex_active(ex_active),
         .ex_ctx   (ex_ctx   ),
+        `endif
 
         //COMPONENT INF
         .dv   (r_dv   ),
@@ -171,7 +175,6 @@ module axi_sub import axi_pkg::*; #(
         .UW(UW),
         .IW(IW),
 
-        .EX_EN(EX_EN),
         .C_LAT(C_LAT)
     ) i_axi_sub_arb (
         .clk    (clk    ),

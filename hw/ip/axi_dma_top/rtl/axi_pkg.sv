@@ -51,27 +51,4 @@ package axi_pkg;
         AXI_RESP_DECERR = 2'b11
     } axi_resp_e;
 
-    // Transaction context
-    typedef struct packed {
-        logic [AXI_AW-1:0] addr;
-        logic [1:0]    burst;
-        logic [2:0]    size;
-        logic [7:0]    len;
-        logic [AXI_UW-1:0] user;
-        logic [AXI_IW-1:0] id;
-        logic          lock;
-    } axi_ctx_t;
-
-    typedef struct packed {
-        logic [AXI_IW-1:0] id;
-        logic [AXI_UW-1:0] user;
-        axi_resp_e     resp;
-        logic          last;
-    } xfer_ctx_t;
-
-    typedef struct packed {
-        logic [AXI_AW-1:0] addr;
-        logic [AXI_AW-1:0] addr_mask;
-    } axi_ex_ctx_t;
-
 endpackage

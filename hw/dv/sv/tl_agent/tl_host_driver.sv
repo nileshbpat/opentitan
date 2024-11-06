@@ -24,7 +24,7 @@ class tl_host_driver extends tl_base_driver;
     fork
       begin : process_seq_item
         forever begin
-          seq_item_port.get_next_item(req);
+          seq_item_port.try_next_item(req);
           if (req != null) begin
             // send_a_channel_request(req);
             send_axi_req(req);
@@ -56,7 +56,6 @@ class tl_host_driver extends tl_base_driver;
 
   // reset axi signals  
   virtual task reset_axi_signals();
-    @(cfg.vif.axi_wr_req);
     cfg.vif.axi_wr_req.awvalid <= 1'b0;
     cfg.vif.axi_wr_req.wvalid <= 1'b0;
     cfg.vif.axi_wr_req.bready <= 1'b0;
@@ -126,7 +125,8 @@ class tl_host_driver extends tl_base_driver;
       seq_item_port.put_response(req);
       `uvm_info(get_full_name(), $sformatf("Got response %0s, pending req:%0d",
                                        req.convert2string(), pending_a_req.size()), UVM_NONE)
-      pending_a_req.delete(pending_a_req.size()-1);
+      // pending_a_req.delete(pending_a_req.size()-1);
+      void'(pending_a_req.pop_back());
       
     end
   endtask
@@ -134,7 +134,9 @@ class tl_host_driver extends tl_base_driver;
   // Drive AXI write transaction
   virtual task drive_axi_wr_transaction(tl_seq_item req);
     begin
-    
+
+      pending_a_req.push_back(req);
+
       @(cfg.vif.wr_cb);
       // Drive address channel
       cfg.vif.axi_wr_req.awvalid <= 1'b1;
@@ -146,27 +148,35 @@ class tl_host_driver extends tl_base_driver;
       cfg.vif.axi_wr_req.awlock  <= 1'b0;
       cfg.vif.axi_wr_req.awlen   <= 8'h0;    // Single beat write transaction
 
-      // Drive data phase (assuming a single beat write transaction here)
-      cfg.vif.axi_wr_req.wvalid <= 1'b1;
-      cfg.vif.axi_wr_req.wdata   <= req.a_data;
-      cfg.vif.axi_wr_req.wstrb   <= req.a_mask;
-
-      // Wait until slave accepts the address phase
+      // Wait until slave accepts the data phase
       @(cfg.vif.wr_cb);
       while (!cfg.vif.axi_wr_rsp.awready) @(cfg.vif.wr_cb);
       cfg.vif.axi_wr_req.awvalid <= 1'b0;
 
-      // Wait until slave accepts the data phase
-      @(cfg.vif.wr_cb);
-      while (!cfg.vif.axi_wr_rsp.wready) @(cfg.vif.wr_cb);
-      cfg.vif.axi_wr_req.wvalid <= 1'b0;
+      cfg.vif.axi_wr_req.wvalid  <= 1'b1;
+      cfg.vif.axi_wr_req.wdata   <= req.a_data;
+      cfg.vif.axi_wr_req.wstrb   <= req.a_mask;
+      cfg.vif.axi_wr_req.wlast   <= 1'b1;
 
+      while (!cfg.vif.axi_wr_rsp.wready) @(cfg.vif.wr_cb);
       // Wait until slave accepts the write response
       @(cfg.vif.wr_cb);
       while (!cfg.vif.axi_wr_rsp.bvalid) @(cfg.vif.wr_cb);
+      cfg.vif.axi_wr_req.wvalid <= 1'b0;
+      cfg.vif.axi_wr_req.wlast  <= 1'b0;
       cfg.vif.axi_wr_req.bready <= 1'b1;
       @(cfg.vif.wr_cb);
       cfg.vif.axi_wr_req.bready <= 1'b0;
+
+      req.req_completed <= 1'b1;
+      req.d_source  <= req.a_source;
+
+      @(cfg.vif.rd_cb);
+      req.rsp_completed = !reset_asserted;
+      seq_item_port.put_response(req);
+      `uvm_info(get_full_name(), $sformatf("Got response %0s, pending req:%0d",
+                                       req.convert2string(), pending_a_req.size()), UVM_NONE)
+      void'(pending_a_req.pop_back());
 
     end
   endtask
@@ -221,7 +231,6 @@ class tl_host_driver extends tl_base_driver;
                         wait(reset_asserted);)
 
       if (!reset_asserted) begin
-        
         if(req.a_opcode == tlul_pkg::tl_a_op_e'(Get)) begin
           send_rd_channel_request(req);
         end else begin
